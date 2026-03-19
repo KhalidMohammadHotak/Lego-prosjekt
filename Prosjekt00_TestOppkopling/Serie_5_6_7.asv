@@ -1,10 +1,13 @@
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-% Serie_1_2_3_4
+% Serie_5_6_7
 %
-% Samler inn målinger til serie 1, 2, 3 og 4.
+% Samler inn målinger til serie 5, 6 og 7.
 %
 % Følgende sensorer brukes:
 % - Lyssensor (måler refleksjon av utsendt lys)
+%
+% Følgende motorer brukes:
+% - motor A
 %--------------------------------------------------------------------------
 
 
@@ -12,13 +15,11 @@
 %         EXPERIMENT SETUP, FILENAME AND FIGURE
 
 clear; close all   % Alltid lurt å rydde workspace opp først
-online = false;     % Online mot EV3 eller mot lagrede data?
-plotting = false;  % Skal det plottes mens forsøket kjøres
-%filename = 'Serie1_Sprang.mat';
-filename = 'Serie2_Bilde.mat';
+online = true;     % Online mot EV3 eller mot lagrede data?
+plotting = true;  % Skal det plottes mens forsøket kjøres
+filename = 'Serie5_Sinus_u100.mat';
 
 if online
-    % Initialiser styrestikke, sensorer og motorer. 
 
     % LEGO EV3 og styrestikke
     mylego = legoev3('USB');
@@ -28,6 +29,9 @@ if online
     % Hvilke sensorer er koplet til?
     myColorSensor = colorSensor(mylego);
 
+    % Hvilke motorer er koplet til?
+    motorA = motor(mylego,'A');
+    motorA.resetRotation;
 else
     % Dersom online=false lastes datafil.
     load(filename)
@@ -35,7 +39,7 @@ end
 
 fig1=figure;
 set(gcf,'units','normalized','outerposition',...
-    [0.15 0.6 0.35 0.35])
+    [0.1 0.27 0.34 0.62])
 drawnow
 
 % setter skyteknapp til 0, og initialiserer tellevariabel k
@@ -63,15 +67,17 @@ while ~JoyMainSwitch
             t(k) = toc; % Henter ut medgått tid
         end
 
-        % Hent målinger fra sensorene
+        % sensorer
         Lys(k) = double(readLightIntensity(myColorSensor,'reflected'));
+        VinkelPosMotorA(k) = double(motorA.readRotation);
 
         % Data fra styrestikke. Utvid selv med andre knapper og akser
         [JoyAxes,JoyButtons] = HentJoystickVerdier(joystick);
         JoyMainSwitch = JoyButtons(1);
     else
-        % Når k er like stor som antall elementer i datavektoren Tid,
-        % simuleres det at bryter på styrestikke trykkes inn.
+        % online=false
+        % Naar k er like stor som antall elementer i datavektpren Tid,
+        % simuleres det at bryter paa styrestikke trykkes inn.
         if k==numel(t)
             JoyMainSwitch=1;
         end
@@ -90,6 +96,17 @@ while ~JoyMainSwitch
     %             CONDITIONS, CALCULATIONS AND SET MOTOR POWER
     % Gjør matematiske beregninger og motorkraftberegninger.
 
+    % Beregner pådrag til motor
+    u_A(k) = 0;
+    if t(k) > 3
+         u_A(k) = 20;
+    end
+    
+    if online && t(k) < 3.25
+        % Setter pådragsdata mot EV3
+        motorA.Speed = u_A(k);
+        start(motorA)
+    end
 
     %--------------------------------------------------------------
 
@@ -104,7 +121,19 @@ while ~JoyMainSwitch
     if plotting || JoyMainSwitch
         figure(fig1)
 
-        plot(t(1:k),Lys(1:k));
+
+        subplot(3,1,1)
+        plot(t(1:k),u_A(1:k),'b-');
+        title('P{\aa}drag til motoren')
+        ylabel('[\%]')
+
+        subplot(3,1,2)
+        plot(t(1:k),VinkelPosMotorA(1:k),'b-');
+        title('Vinkelposisjon motor A')
+        ylabel('[$^{\circ}$]')
+
+        subplot(3,1,3)
+        plot(t(1:k),Lys(1:k),'b-');
         title('M{\aa}ling av reflektert lys')
         xlabel('tid [s]')
 
@@ -116,22 +145,39 @@ while ~JoyMainSwitch
 end
 
 
+
 % +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-%                STOP MOTORS
+%           STOP MOTORS
+
+if online
+    % Stopper motor etter at while-løkken er ferdig
+    stop(motorA);
+end
+
 
 % Lager litt luft i y-retning
+subplot(3,1,1)
 xl = xlim(gca);        % husk x-limits
 axis padded;           % legger padding på begge akser
 xlim(xl);              % gjenopprett x-limits, bare y beholdes paddet
+grid
 
-grid on
+% Lager litt luft i y-retning
+subplot(3,1,2)
+xl = xlim(gca);        % husk x-limits
+axis padded;           % legger padding på begge akser
+xlim(xl);              % gjenopprett x-limits, bare y beholdes paddet
+grid
+
+% Lager litt luft i y-retning
+subplot(3,1,3)
+xl = xlim(gca);        % husk x-limits
+axis padded;           % legger padding på begge akser
+xlim(xl);              % gjenopprett x-limits, bare y beholdes paddet
+grid
 legend(['$\{u_k\}$, $T_s{\approx}$',num2str(mean(diff(t)),2),' sek',...
     ', $f_s{\approx}$',num2str(1/(mean(diff(t))),3),' Hz'],...
     'location','best')
-
-
 %------------------------------------------------------------------
-
-
 
 

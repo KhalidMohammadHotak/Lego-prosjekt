@@ -15,7 +15,7 @@
 %         EXPERIMENT SETUP, FILENAME AND FIGURE
 
 clear; close all   % Alltid lurt å rydde workspace opp først
-online = false;     % Online mot EV3 eller mot lagrede data?
+online = true;     % Online mot EV3 eller mot lagrede data?
 plotting = false;  % Skal det plottes mens forsøket kjøres
 filename = 'Serie5_Sinus_u100.mat';
 
@@ -99,7 +99,7 @@ while ~JoyMainSwitch
     % Beregner pådrag til motor
     u_A(k) = 0;
     if t(k) > 3
-         u_A(k) = 100;
+         u_A(k) = 40;
     end
     
     if online && t(k) < 3.25
