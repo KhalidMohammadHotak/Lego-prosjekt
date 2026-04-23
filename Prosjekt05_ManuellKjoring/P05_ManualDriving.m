@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 % P0X_.....
 %
@@ -552,3 +553,559 @@ legend('Orginal', 'Filtrert', ...
 % title('Sammenheng mellom IAE og TV for flere kjøringer');
 
 
+=======
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% P0X_.....
+%
+% Hensikten med programmet er � ....
+% F�lgende sensorer brukes:
+% - Lyssensor
+% - ...
+% - ...
+%
+% F�lgende motorer brukes:
+% - motor A
+% - ...
+% - ...
+%
+%--------------------------------------------------------------------------
+
+
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%         EXPERIMENT SETUP, FILENAME AND FIGURE
+
+clear ; close all   % Alltid lurt � rydde workspace opp f�rst
+online = false;     % Online mot EV3 eller mot lagrede data?
+plotting = true;  % Skal det plottes mens fors�ket kj�res 
+filename = 'khalid1.mat';  % Data ved offline
+fc=0.5;
+if online
+    % Initialiser styrestikke, sensorer og motorer. 
+    % Dersom du bruker 2 like sensorer, s� m� du 
+    % initialisere med portnummer som argument som:
+  %  mySonicSensor_1 = sonicSensor(mylego,1);
+   % mySonicSensor_2 = sonicSensor(mylego,2);
+   % mySonicSensor_3 = sonicSensor(mylego,3);
+    
+    % LEGO EV3 og styrestikke
+    mylego = legoev3('USB');
+    joystick = vrjoystick(1);
+    [JoyAxes,JoyButtons] = HentJoystickVerdier(joystick);
+
+    % Hvilke sensorer er koplet til?
+    myColorSensor = colorSensor(mylego);    
+    %myTouchSensor = touchSensor(mylego);
+    mySonicSensor = sonicSensor(mylego);
+    myGyroSensor  = gyroSensor(mylego);
+    resetRotationAngle(myGyroSensor);
+
+    % Hvilke motorer er koplet til?
+    motorA = motor(mylego,'A');
+    motorA.resetRotation;
+    motorB = motor(mylego,'B');
+    motorB.resetRotation;
+    %motorC = motor(mylego,'C');
+    %motorC.resetRotation;
+    %motorD = motor(mylego,'D');
+    %motorD.resetRotation;
+else
+    % Dersom online=false lastes datafil.
+    load(filename)
+    online = false;
+end
+
+fig1=figure;
+set(gcf,'units','normalized','outerposition',[0.1 0.3 0.6 0.6])
+drawnow
+
+% setter skyteknapp til 0, og initialiserer tellevariabel k
+JoyMainSwitch=0;
+k=0;
+%----------------------------------------------------------------------
+
+
+
+while ~JoyMainSwitch
+    %+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    %                       GET TIME AND MEASUREMENT
+    % F� tid og m�linger fra sensorer, motorer og joystick
+
+    k=k+1;               % oppdater tellevariabel
+
+
+    if online
+        if k==1 
+            % Spiller av lyd slik at du vet at innsamlingen har startet
+            playTone(mylego,500,0.1)   % 500Hz i 0.1 sekund
+            tic          % Starter stoppeklokke
+            t(1) = 0;
+            
+        else
+            t(k) = toc;  % Henter ut medg�tt tid
+            
+        end
+        
+
+        % Sensorer, bruk ikke Lys(k) og LysDirekte(k) samtidig
+        Lys(k) = double(readLightIntensity(myColorSensor,'reflected'));
+        LysDirekte(k) = double(readLightIntensity(myColorSensor));
+       % Bryter(k)  = double(readTouch(myTouchSensor));
+        Avstand(k) = double(readDistance(mySonicSensor));        
+       
+        % Bruk ikke GyroAngle(k) og GyroRate(k) samtidig
+        %GyroAngle(k) = double(readRotationAngle(myGyroSensor));
+        GyroRate(k)  = double(readRotationRate(myGyroSensor));
+ 
+        % Hent m�linger fra motorene
+        VinkelPosMotorA(k) = double(motorA.readRotation);
+        VinkelPosMotorB(k) = double(motorB.readRotation);
+       % VinkelPosMotorC(k) = double(motorC.readRotation);
+        %VinkelPosMotorD(k) = double(motorC.readRotation);
+
+        % Data fra styrestikke. Utvid selv med andre knapper og akser.
+        % Bruk filen joytest.m til � finne koden for knappene og aksene.
+        [JoyAxes,JoyButtons] = HentJoystickVerdier(joystick);
+        JoyMainSwitch = JoyButtons(1);
+        JoyForover(k)       = JoyAxes(2);   % frem/tilbake
+        joyTwist(k)         = JoyAxes(3);   % rotasjon
+        JoyPotensiometer(k) = JoyAxes(1);   % styrke / throttle
+
+    else
+        % N�r k er like stor som antall elementer i datavektoren Tid,
+        % simuleres det at bryter p� styrestikke trykkes inn.
+        if k==length(t)
+            JoyMainSwitch=1;
+        end
+
+        if plotting
+            % Simulerer tiden som EV3-Matlab bruker p� kommunikasjon 
+            % n�r du har valgt "plotting=true" i offline
+            pause(0.03)
+        end
+
+    end
+  
+    %--------------------------------------------------------------
+
+    y(k) = Lys(k);
+    r(k) = Lys(1);
+    e(k) = r(k) - y(k);
+
+    % Ts
+
+    if k == 1
+        Ts(k) = 0;
+    else
+        Ts(k) = t(k) - t(k-1);
+    end
+
+
+    %----Rekursive MAE ( Mean absolute error )
+
+    if k == 1
+        MAE(k) = abs(e(k));
+    else
+        MAE(k) = ( (k-1)*MAE(k-1) + abs(e(k))) / k;
+    end
+
+    %---- Regne ut Integral absolute Error ( IAE )
+
+
+    if k == 1
+        IAE(k) = 0;
+    else
+        IAE(k) = IAE(k-1) + (abs(e(k)) + abs(e(k-1))) /2 * Ts(k);
+    end
+
+
+    %---- Løpende middelverdi og standardavvik av y(k)
+
+
+    % if k == 1
+    %     y_mean(k) = y(k);
+    %     M2 = 0;          % hjelpevariabel for varians
+    %     y_std(k) = 0;
+    % 
+    % else
+    %     delta = y(k) - y_mean(k-1);
+    %     y_mean(k) = y_mean(k-1) + delta /k;   % løpende middelverdi
+    %     M2 = M2 + delta * (y(k) - y_mean(k)); % løpende standardavvik
+    %     y_std(k) = sqrt(M2 / (k-1));
+    % end
+
+
+% %--- Beregner middelverdi og standardavvik ved hjelp av Matlab funskjoner.
+% y_mean(k) = mean(y(1:k));
+% y_std(k)  = std(y(1:k));
+
+
+    % +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    %             CONDITIONS, CALCULATIONS AND SET MOTOR POWER
+    % Gj�r matematiske beregninger og motorkraftberegninger.
+    % hvis motor er tilkoplet.
+    
+
+    % Tilordne m�linger til variabler
+    u(k) = Lys(k);
+
+  
+
+
+
+    % if k==1
+    %     % Spesifisering av initialverdier og parametere
+    %     a = 1;          % eksempelparameter
+    %     Ts(k)=0;
+    % else
+    %     % Beregninger av Ts og andre variable
+    %     Ts(k) = t(k) - t(k-1);
+    % 
+    % end
+
+    % Andre beregninger som ikke avhenger av initialverdi
+
+    % P�dragsberegninger
+    forward_backward = JoyForover(k);
+    left_right=joyTwist(k);
+
+    mototr_strenght(k)=interp1([-100,100],[0,1],JoyPotensiometer(k));
+%mototp�drag
+    u_A(k) = (forward_backward +left_right) * 1 * mototr_strenght(k);
+    u_B(k) = (forward_backward-left_right ) * 1 * mototr_strenght(k);
+
+     % Begrens motorp�drag til [-100,100]
+    u_A(k) = max(min(u_A(k),100),-100);
+    u_B(k) = max(min(u_B(k),100),-100);
+
+    %---- Total variasjon for motor A og B
+
+    if k == 1
+        TVA(k) = 0;
+        TVB(k) = 0;
+    else
+        TVA(k) = TVA(k-1) + abs(u_A(k) - u_A(k-1));
+        TVB(k) = TVB(k-1) + abs(u_B(k) - u_B(k-1));
+    end
+ 
+
+    if online
+        % Setter p�dragsdata mot EV3
+        % (slett de motorene du ikke bruker)
+        motorA.Speed = u_A(k);
+        motorB.Speed = u_B(k);
+       % motorC.Speed = u_C(k);
+       % motorD.Speed = u_D(k);
+
+        start(motorA)
+        start(motorB)
+        %start(motorC)
+        %start(motorD)
+    end
+    %--------------------------------------------------------------
+
+
+
+
+    %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    %                  PLOT DATA
+    %
+    % Husk at syntaksen plot(Tid(1:k),m�ling(1:k))
+    % gir samme opplevelse i online=0 og online=1 siden
+    % alle m�lingene (1:end) eksisterer i den lagrede .mat fila
+
+    % Plotter enten i sann tid eller n�r fors�k avsluttes 
+    if plotting || JoyMainSwitch  
+        figure(fig1)
+
+        subplot(2,2,1)
+        plot(t(1:k),Lys(1:k));
+        title('Lys reflektert')
+
+        subplot(2,2,2)
+        plot(t(1:k),Avstand(1:k));
+        title('Avstand')
+
+        subplot(2,2,3)
+        plot(t(1:k),VinkelPosMotorB(1:k));
+        title('Vinkelposisjon motor B')
+        xlabel('tid [s]')
+
+        subplot(2,2,4)
+        plot(t(1:k),u_B(1:k));
+        title('P{\aa}drag motor B')
+        xlabel('tid [s]')
+
+        % tegn n� (viktig kommando)
+        drawnow
+    end
+    %--------------------------------------------------------------
+end
+
+
+% +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%               STOP MOTORS
+if online
+    % For ryddig og oversiktlig kode, kan det v�re lurt � slette
+    % de sensorene og motoren som ikke brukes.
+    stop(motorA);
+    stop(motorB);
+   % stop(motorC);
+   % stop(motorD);
+
+end
+%------------------------------------------------------------------
+% 
+% subplot(2,2,1)
+% legend('$\{u_k\}$')
+
+% 1 - Gyrosensor
+subplot(4,2,1)
+plot(t,GyroAngle, 'LineWidth',1.2)
+title('Gyrosensor - vinkelposisjon(GyroAngle)')
+xlabel('tid [s]')
+ylabel('Vinkel [°]')
+xlim([0 25])
+
+grid on
+
+%2 - Utgang Y og referanse r 
+subplot(4,2,2)
+plot(t, y, 'b', t, r, 'r--')
+title('Utgang Y(k) og referanse r(k)')
+legend('y(k)', 'r(k)')
+xlabel('Tid [s]')
+ylabel('Lysverdi')
+xlim([0 25])
+grid on
+
+
+% 3 - Avvik e
+
+subplot(4,2,3)
+plot(t,e)
+title('Avvik e(k) = r(k) - y(k)')
+xlabel('Tid [s]')
+ylabel('Avvik')
+xlim([0 25])
+grid on
+
+
+% 4 - pådrag u_A og u_B
+
+subplot(4,2,4)
+plot(t, u_A, t, u_B)
+title('Motorpådrag u_A og u_B')
+legend('u_A', 'u_B')
+xlabel('Tid[s]')
+ylabel('Pådrag [%]')
+xlim([0 25])
+grid on
+
+% 5 - Integral og Absolute Error (IAE)
+
+subplot(4,2,5)
+plot(t, IAE)
+title('Integral of Absolute Error (IAE)')
+xlabel('Tid[s]')
+ylabel('IAE')
+xlim([0 25])
+grid on 
+
+
+% 6 - Total variation of U_A og u_B
+
+subplot(4,2,6)
+plot(t, TVA, t, TVB)
+title('Total variation TVA og TVB')
+legend('TVA', 'TVB')
+xlabel('Tid[s]')
+ylabel('TV')
+xlim([0 25])
+legend('TVA', 'TVB')
+grid on
+
+% 7 - Mean Absolute Error (MAE)
+
+subplot(4,2,7)
+plot(t, MAE)
+title('Mean Absolute Error (MAE)')
+xlabel('Tid[s]')
+ylabel('MAE')
+xlim([0 25])
+grid on
+
+
+% 8 - Samplingstid Ts
+
+subplot(4,2,8)
+plot(t,Ts)
+title('Samplingstid Ts')
+xlabel('Tid[s]')
+ylabel('Ts[s]')
+xlim([0 25])
+grid on 
+
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% %Histogram av lysmålinger – rekursiv metode (uten uteliggere)
+% 
+% % % Fjern uteliggere i y
+idx_outliers = isoutlier(y, 'median');
+y_clean = y(~idx_outliers);
+% 
+% Beregn middelverdi og standardavvik
+mu  = mean(y_clean);
+sig = std(y_clean);
+
+% Beregn prosentandel av målinger innenfor ±1 std
+inside = (y_clean >= mu - sig) & (y_clean <= mu + sig);
+percentage_inside = sum(inside) / length(y_clean) * 100;
+
+% Skriv resultatet i kommandovinduet
+fprintf('%.2f %% av målingene ligger innenfor middelverdi ± 1 std.\n',...
+    percentage_inside);
+
+figure;
+% 
+% 
+% % Histogram av alle målinger
+% 
+% %histogram(y, 'Normalization', 'count'); % Histogram av alle målinger
+% 
+% % Histogram av målinger uten uteliggere
+% 
+histogram(y_clean, 'Normalization', 'count');
+% 
+% 
+% 
+% 
+% hold on;
+% grid on;
+% 
+% Rekursive sluttverdier (fra original beregning)
+mu  = y_mean(end);
+sig = y_std(end);
+% 
+% Marker middelverdi og standardavvik
+xline(mu, 'r-', 'LineWidth', 2);
+xline(mu + sig, 'r--', 'LineWidth', 1.5);
+xline(mu - sig, 'r--', 'LineWidth', 1.5);
+% 
+title('Histogram av lysmålinger y(k) uten uteliggere')
+xlabel('Lysmåling y(k)')
+ylabel('Antall målinger')
+grid on 
+% 
+% legend('Fordelingen av y(k)', ...
+%        sprintf('Middelverdi = %.2f', mu), ...
+%        sprintf('Standardavvik = %.2f', sig), ...
+%        'Location','best');
+
+Y_Lp = LavpassFilter(t, y, fc=fc);
+figure;
+subplot(3,1,1)
+plot(t, y, 'b-')
+grid on
+title('Signal $\{u_k\}$')
+xlim([0 25])
+legend('Orginal')
+
+subplot(3,1,2)
+plot(t, Y_Lp, 'r-')
+grid on
+title('Lavpassfiltrert signal $\{y_k\}$')
+xlim([0 25])
+legend('Filtrert')
+    
+subplot(3,1,3)
+plot(t, y, 'b-')
+hold on
+grid on
+plot(t, Y_Lp, 'r-')
+
+%Legg til middelverdi og standardavvik
+yline(mu, 'g-', 'LineWidth', 2);
+yline(mu + sig, '--', 'LineWidth', 1.5);
+yline(mu - sig, '--', 'LineWidth', 1.5);
+
+
+title('Signal $\{u_k\}$ og lavpassfiltrert signal $\{y_k\}$')
+xlabel('tid [s]')
+xlim([0 25])
+legend('Orginal', 'Filtrert', ...
+       sprintf('Middelverdi = %.2f', mu), ...
+       sprintf('±1 std = %.2f', sig), ...
+       sprintf('-1 std = %.2f', sig))
+
+
+% 
+% figure;
+% 
+% % Plot alle målinger
+% plot(t, y, 'b', 'LineWidth', 1.2); 
+% hold on;
+% grid on;
+% 
+% % Beregn sluttverdier
+% mu  = y_mean(end);
+% sig = y_std(end);
+% 
+% % Marker middelverdi og standardavvik
+% yline(mu, 'r-', 'LineWidth', 2);          % middelverdi
+% yline(mu + sig, 'r--', 'LineWidth', 1.5); % +1 std
+% yline(mu - sig, 'r--', 'LineWidth', 1.5); % -1 std
+% 
+% title('Lysmålinger y(k) med middelverdi og standardavvik');
+% xlabel('Tid [s]');
+% ylabel('Lysmåling y(k)');
+% 
+% legend('y(k)', ...
+%        sprintf('Middelverdi = %.2f', mu), ...
+%        sprintf('+1 std = %.2f', mu+sig), ...
+%        sprintf('-1 std = %.2f', mu-sig), ...
+%        'Location','best');
+
+
+%Sammenheng mellom IAE og TV for flere kjøringer.
+% IAE_values = [];
+% TV_values  = [];
+% 
+% files = ["khalid1.mat", "sharif1.mat", "sunil1.mat", "kristoffer1.mat"];
+% 
+% for f = files
+%     load(f)
+% 
+%     % --- Beregn e(k)
+%     e = r - y;
+% 
+%     % --- Beregn Ts
+%     Ts = zeros(size(t));
+%     Ts(2:end) = diff(t);
+% 
+%     % --- Beregn IAE
+%     IAE = zeros(size(e));
+%     for k = 2:length(e)
+%         IAE(k) = IAE(k-1) + (abs(e(k)) + abs(e(k-1))) / 2 * Ts(k);
+%     end
+% 
+%     % --- Beregn TVA
+%     TVA = zeros(size(u_A));
+%     for k = 2:length(u_A)
+%         TVA(k) = TVA(k-1) + abs(u_A(k) - u_A(k-1));
+%     end
+% 
+%     % --- Lagre sluttverdier
+%     IAE_values(end+1) = IAE(end);
+%     TV_values(end+1)  = TVA(end);
+% end
+% 
+% % --- Scatter-plot
+% figure;
+% scatter(IAE_values, TV_values, 120, 'filled');
+% grid on;
+% 
+% xlabel('IAE (sluttverdi)');
+% ylabel('TV (sluttverdi)');
+% title('Sammenheng mellom IAE og TV for flere kjøringer');
+
+
+>>>>>>> 3f7b2cd572da4987509dba26d33684346e472809
