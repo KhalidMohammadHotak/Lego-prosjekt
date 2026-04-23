@@ -13,9 +13,9 @@
 %         EXPERIMENT SETUP, FILENAME AND FIGURE
 
 clear; close all   % Alltid lurt å rydde workspace opp først
-online = true;     % Online mot EV3 eller mot lagrede data?
+online = false;     % Online mot EV3 eller mot lagrede data?
 plotting = true;  % Skal det plottes mens forsøket kjøres 
-filename = 'P04_Pdel_1.mat'; % Navnet på datafilen når online=0.
+filename = 'P04_Ki_01.mat'; % Navnet på datafilen når online=0.
 
 if online  
    mylego = legoev3('USB');
@@ -103,7 +103,7 @@ while ~JoyMainSwitch
 
     if k==1
         % Regulatorparameter
-        Ki = ..;    % start med lave verdier, typisk 0.005
+        Ki = 0.3;    % start med lave verdier, typisk 0.005
 
         % Referanse-verdier og tidspunkt, og indeks for å spille lyd
         tidspunkt =  [0, 2,  6,   10,   14,  18];  % sekund
@@ -115,7 +115,7 @@ while ~JoyMainSwitch
         I_min = -inf;
 
         % Initialverdier 
-        tau_pos = 0.2;     % Tidskonstant, filtrert vinkelposisjon 
+        tau_pos = 0.5;     % Tidskonstant, filtrert vinkelposisjon 
         x1_f(1) = 0;      % Filtrert vinkelposisjon
         x2(1) = 0;        % Vinkelhastighet motor
 
@@ -147,7 +147,8 @@ while ~JoyMainSwitch
         e(k) = r(k)-y(k);
 
         % Lag kode for I-bidraget
-        I(k) = ..
+        I(k) = I(k-1) + Ki * e(k) * Ts;
+
 
         % Integratorbegrensing (vent med å implementere denne)
         % if I(k) > I_max

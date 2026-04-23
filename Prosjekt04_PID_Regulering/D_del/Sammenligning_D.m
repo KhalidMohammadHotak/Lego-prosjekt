@@ -5,9 +5,9 @@
 %   d) Kommenter deretter ut linje 3, kjør linje 4
 
 %clear;close all                                  % linje 1
-load('P04_Kd_xxx_tau_yy.mat');farge = 'b';        % linje 2, liten Kd
-% load('P04_Kd_zzz_tau_xx.mat');farge = 'r';        % linje 3, litt større Kd
-% load('P04_Kd_yyy_tau_zz.mat');farge = [0 0.6 0];  % linje 4, størst Kd
+%load('P04_Kd_001_tau_0.1.mat');farge = 'b';        % linje 2, liten Kd
+%load('P04_Kd_002_tau_0.1.mat');farge = 'r';        % linje 3, litt større Kd
+load('P04_Kd_005_tau_0.1.mat');farge = [0 0.6 0];  % linje 4, størst Kd
 
 % Åpne figure nummer 1
 figure(1)
@@ -37,6 +37,7 @@ plot(t,u_A,'-','color',farge);
 hold on
 yline(100, 'k:','linewidth',2,'HandleVisibility','off')
 yline(-100, 'k:','linewidth',2,'HandleVisibility','off')
+ylim([-30 30])
 grid on
 title('D-bidraget')
 xlabel('Tid [sek]')

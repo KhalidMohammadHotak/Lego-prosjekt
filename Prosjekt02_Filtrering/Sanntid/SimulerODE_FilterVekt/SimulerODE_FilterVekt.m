@@ -10,9 +10,13 @@
 %         EXPERIMENT SETUP, FILENAME AND FIGURE
 
 clear; close all   % Alltid lurt å rydde workspace opp først
-online = true;     % Online mot EV3 eller mot lagrede data?
+online = false;     % Online mot EV3 eller mot lagrede data?
 plotting = true;  % Skal det plottes mens forsøket kjøres
-filename = 'TidLys.mat';
+filename = {'forste_mann.mat', ...
+    'andre_mann.mat', ...
+    'tredje_mann.mat', ...
+    'fjerde_mann.mat'...
+    };
 
 if online
 
@@ -26,13 +30,17 @@ if online
 
 else
     % Dersom online=false lastes datafil.
-    load(filename)
+    load("forste_mann.mat")
+    load("andre_mann.mat")
+    load("tredje_mann.mat")
+    load("fjerde_mann.mat")
+
 end
 
 fig = figure('Name','Kjøkkenvekt Display','NumberTitle','off','Position',[500 500 300 150]);
 % Lag et tekstfelt som simulerer LCD-display
 
-lcdDisplay = uicontrol('Style','text',...
+dlcdDisplay = uicontrol('Style','text',...
     'FontSize',40,...
     'FontName','FixedWidth',...
     'FontWeight','bold',...
@@ -100,6 +108,11 @@ while ~JoyMainSwitch
     if k==1
         % Initialverdier modell og filter
 
+        m(1) = 0;
+        m_f(1) = 0;
+        m_dot(1) = 0;
+        
+
 
         % Eksperimentlengde og tidskonstant filter
         t_max = 10;      % eksperimentlengde
@@ -110,12 +123,12 @@ while ~JoyMainSwitch
         Ts = t(k)-t(k-1);
 
         % Integrerer diff.likn. med Eulers forover
-        m_dot(k-1) = ..
-        m(k) = ..
+        m_dot(k-1) = w_inn(k-1);
+        m(k) = m(k-1) + Ts * m_dot(k-1);
 
         % Filtrere m(k) før visning i LCD
-        alfa  = ..
-        m_f(k) = ..
+        alfa  = Ts /(tau + Ts);
+        m_f(k) = m_f(k-1) + alfa * (m(k) - m_f(k-1));
         
     end
 
@@ -145,19 +158,19 @@ figure
 subplot(2,1,1)
 plot(t(1:k),w_inn(1:k),'b-');
 grid
-title('P{\aa}fylling av sukker')
-ylabel('[g/s]')
-xlim([0 t_max])
+title('P{\aa}fylling av sukker');
+ylabel('[g/s]');
+xlim([0 t_max]);
 
 subplot(2,1,2)
 plot(t(1:k),m_f(1:k),'b-');
 hold on
 plot(t(1:k),m(1:k),'r-');
 grid
-ylabel('[g]')
-title('Vekt vist i display $m_f(t)$ og reell vekt $m(t)$')
-xlim([0 t_max])
-ylim([-10 300])
+ylabel('[g]');
+title('Vekt vist i display $m_f(t)$ og reell vekt $m(t)$');
+xlim([0 t_max]);
+ylim([-10 300]);
 
 
 

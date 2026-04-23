@@ -38,6 +38,12 @@ drawnow
 % setter skyteknapp til 0, og initialiserer tellevariabel k
 JoyMainSwitch=0;
 k=0;
+
+% Referansehopp
+tidspunkt   = [0 5 10 15 20 25];      % tidspunkter for hopp
+RefVerdier  = [0 300 600 900 1200 500];   % referanseverdier i deg/s
+RefVerdiIndeks = 1;
+
 %----------------------------------------------------------------------
 
 % starter stoppeklokke for å kunne
@@ -99,12 +105,12 @@ while ~JoyMainSwitch
     if k==1
         % Regulatorparametre
         u0 = 0;
-        Kp = ..;  
-        Ki = ..;   
-        Kd = ..; 
-        tau_e = ..;  % tidskonstant filtrering av e(k)
-        I_max = ..;
-        I_min = ..;
+        Kp = 0.06;  
+        Ki = 0.3;   
+        Kd = 0.025; 
+        tau_e = 0.3;  % tidskonstant filtrering av e(k)
+        I_max = 100;
+        I_min = -100;
 
         % Initialverdier 
         tau_pos = 0.2;     % Tidskonstant, filtrert vinkelposisjon 
@@ -143,19 +149,22 @@ while ~JoyMainSwitch
         e(k) = r(k) - y(k);
 
         % Lag kode for PID-regulatoren
-        P(k) = ..;
-        I(k) = ..;
+        P(k) = Kp * e(k);
+        I(k) = I(k-1) + Ki * e(k) * Ts;
+
+        alfa_e  = 1-exp(-Ts/tau_e);  % tidsavhengig alfa
+        e_f(k) = (1-alfa_e)*e_f(k-1) + alfa_e*e(k);
+        D(k) = Kd* (e_f(k) - e_f(k-1)) /Ts;
 
         % Integratorbegrensing
-        % if I(k) > I_max
-        %     I(k) = I_max;
-        % elseif I(k) < I_min
-        %     I(k) = I_min;
-        % end
+        if I(k) > I_max
+            I(k) = I_max;
+        elseif I(k) < I_min
+            I(k) = I_min;
+        end
 
-        alfa_e  = ..;  % tidsavhengig alfa
-        e_f(k) = ..;
-        D(k) = ..;
+        
+
 
         % Spiller av varierende lyd ved hvert referanseskifte
         if online && r(k) ~= r(k-1)
