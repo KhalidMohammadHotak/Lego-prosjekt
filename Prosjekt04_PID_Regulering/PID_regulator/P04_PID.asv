@@ -14,8 +14,8 @@
 %         EXPERIMENT SETUP, FILENAME AND FIGURE
 
 clear; close all   % Alltid lurt å rydde workspace opp først
-online = true;     % Online mot EV3 eller mot lagrede data?
-plotting = ;  % Skal det plottes mens forsøket kjøres
+online = false;     % Online mot EV3 eller mot lagrede data?
+plotting = true;  % Skal det plottes mens forsøket kjøres
 filename = 'P04_PID2.mat'; % Navnet på datafilen når online=0.
 
 if online
@@ -132,6 +132,10 @@ while ~JoyMainSwitch
         % Beregninger av tidsskritt
         Ts = t(k) - t(k-1);
 
+
+
+       
+
         % Filtrert vinkelposisjon x1_f(k)
         alfa_pos  = 1 - exp(-Ts/tau_pos);  % tidsavhengig alfa
         x1_f(k) = (1 - alfa_pos)*x1_f(k-1) + alfa_pos*x1(k);
@@ -148,6 +152,15 @@ while ~JoyMainSwitch
         % Reguleringssavvik
         e(k) = r(k) - y(k);
 
+        para = [kp, ki, kd, I_max, I_min, Ts(K), tau_e];
+
+         PID = MinPID(I(K-1), e_f(k-1), e(k), para);
+
+         Kp    = PID(1);
+        Ki    = PID(1);
+        Kd    = para(3);
+        e_f(k) = PID(4);
+
         % Lag kode for PID-regulatoren
         P(k) = Kp * e(k);
         I(k) = I(k-1) + Ki * e(k) * Ts;
@@ -163,7 +176,10 @@ while ~JoyMainSwitch
             I(k) = I_min;
         end
 
-        
+      
+% para = [Kp, Ki, Kd, I_max, I_min, Ts, tau_e];
+% [P(k), I(k), D(k), e_f(k)] = MinPID(I(k-1), e_f(k-1), e(k-1:k), para);
+
 
 
         % Spiller av varierende lyd ved hvert referanseskifte

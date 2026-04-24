@@ -13,9 +13,9 @@
 %         EXPERIMENT SETUP, FILENAME AND FIGURE
 
 clear; close all   % Alltid lurt å rydde workspace opp først
-online = true;     % Online mot EV3 eller mot lagrede data?
+online = false;     % Online mot EV3 eller mot lagrede data?
 plotting = true;  % Skal det plottes mens forsøket kjøres 
-filename = 'P04_d_tau=0.1_kd=0.02.mat'; % Navnet på datafilen når online=0.
+filename = 'P04_Kd_005_tau_0.1.mat'; % Navnet på datafilen når online=0.
 
 if online  
    mylego = legoev3('USB');
@@ -144,7 +144,7 @@ while ~JoyMainSwitch
         % Reguleringssavvik
         e(k) = r(k) - y(k);
 
-        % Lag kode for D-bidraget
+        %Kode for D-bidraget
         alfa_e  = 1 - exp(-Ts/tau_e);  % tidsavhengig alfa
         e_f(k) = (1 - alfa_e)*e_f(k-1) + alfa_e*e(k);
         D(k) = Kd * (e_f(k) - e_f(k-1)) / Ts;

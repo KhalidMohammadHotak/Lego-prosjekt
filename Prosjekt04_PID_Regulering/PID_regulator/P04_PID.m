@@ -105,9 +105,9 @@ while ~JoyMainSwitch
     if k==1
         % Regulatorparametre
         u0 = 0;
-        Kp = 0.06;  
-        Ki = 0.3;   
-        Kd = 0.025; 
+        kp = 0.06;  
+        ki = 0.3;   
+        kd = 0.025; 
         tau_e = 0.3;  % tidskonstant filtrering av e(k)
         I_max = 100;
         I_min = -100;
@@ -132,6 +132,10 @@ while ~JoyMainSwitch
         % Beregninger av tidsskritt
         Ts = t(k) - t(k-1);
 
+
+
+       
+
         % Filtrert vinkelposisjon x1_f(k)
         alfa_pos  = 1 - exp(-Ts/tau_pos);  % tidsavhengig alfa
         x1_f(k) = (1 - alfa_pos)*x1_f(k-1) + alfa_pos*x1(k);
@@ -146,24 +150,36 @@ while ~JoyMainSwitch
         r(k) = interp1(tidspunkt, RefVerdier, t(k), 'previous', 'extrap');
         
         % Reguleringssavvik
-        e(k) = r(k) - y(k);
+        e(k) =r(k) - y(k);
 
-        % Lag kode for PID-regulatoren
-        P(k) = Kp * e(k);
-        I(k) = I(k-1) + Ki * e(k) * Ts;
+        para = [kp, ki, kd, I_max, I_min, Ts, tau_e];
 
-        alfa_e  = 1-exp(-Ts/tau_e);  % tidsavhengig alfa
-        e_f(k) = (1-alfa_e)*e_f(k-1) + alfa_e*e(k);
-        D(k) = Kd* (e_f(k) - e_f(k-1)) /Ts;
+        [P(k), I(k), D(k), e_f(k)] = MinPID(I(k-1), e_f(k-1), e(k), para);
 
-        % Integratorbegrensing
-        if I(k) > I_max
-            I(k) = I_max;
-        elseif I(k) < I_min
-            I(k) = I_min;
-        end
+%        P(k) = PID(1);
+ %       I(k) = PID(2);
+  %      D(k) = PID(3);
+   %     e_f(k) = PID(4);
 
-        
+        % % Lag kode for PID-regulatoren
+        % P(k) = kp * e(k);
+        % I(k) = I(k-1) + ki * e(k) * Ts;
+        % 
+        % alfa_e  = 1-exp(-Ts/tau_e);  % tidsavhengig alfa
+        % e_f(k) = (1-alfa_e)*e_f(k-1) + alfa_e*e(k);
+        % D(k) = kd* (e_f(k) - e_f(k-1)) /Ts;
+        % 
+        % % Integratorbegrensing
+        % if I(k) > I_max
+        %     I(k) = I_max;
+        % elseif I(k) < I_min
+        %     I(k) = I_min;
+        % end
+
+      
+% para = [Kp, Ki, Kd, I_max, I_min, Ts, tau_e];
+% [P(k), I(k), D(k), e_f(k)] = MinPID(I(k-1), e_f(k-1), e(k-1:k), para);
+
 
 
         % Spiller av varierende lyd ved hvert referanseskifte
@@ -251,9 +267,9 @@ legend('$\{r_k\}$','$\{y_k\}$')
 subplot(3,1,2)
 legend('$\{e_k\}$',['$\{e_{f,k}\}$, $\tau_e$=',num2str(tau_e),' s'])
 subplot(3,1,3)
-legend(['P-del, $K_p$=',num2str(Kp)],...
-    ['I-del,  $K_i$=',num2str(Ki)],...
-    ['D-del,  $K_d$=',num2str(Kd),'og $\tau_e$=',num2str(tau_e)],...
+legend(['P-del, $K_p$=',num2str(kp)],...
+    ['I-del,  $K_i$=',num2str(ki)],...
+    ['D-del,  $K_d$=',num2str(kd),'og $\tau_e$=',num2str(tau_e)],...
     '$\{u_k\}$')
 
 %------------------------------------------------------------------

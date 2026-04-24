@@ -7,7 +7,7 @@
 %clear;close all                                  % linje 1
 %load('P04_Kd_001_tau_0.1.mat');farge = 'b';        % linje 2, liten Kd
 %load('P04_Kd_002_tau_0.1.mat');farge = 'r';        % linje 3, litt større Kd
-load('P04_Kd_002_tau_0.7.mat');farge = [0 0.6 0];  % linje 4, størst Kd
+load('P04_Kd_005_tau_0.1.mat');farge = [0 0.6 0];  % linje 4, størst Kd
 
 % Åpne figure nummer 1
 figure(1)
@@ -30,20 +30,20 @@ title('Reguleringsavvik')
 ylabel('[$^{\circ}$/s]')
 legend('$K_d=0.01$ og $\tau_e=0.1$',...
     '$K_d=0.02$ og $\tau_e=0.1$',...
-    '$K_d=0.02$ og $\tau_e=0.7$')
+    '$K_d=0.05$ og $\tau_e=0.1$')
 
 subplot(3,1,3)
 plot(t,u_A,'-','color',farge);
 hold on
 yline(100, 'k:','linewidth',2,'HandleVisibility','off')
 yline(-100, 'k:','linewidth',2,'HandleVisibility','off')
-ylim([-50 50])
+ylim([-30 30])
 grid on
 title('D-bidraget')
 xlabel('Tid [sek]')
 legend('$K_d=0.01$ og $\tau_e=0.1$',...
     '$K_d=0.02$ og $\tau_e=0.1$',...
-    '$K_d=0.02$ og $\tau_e=0.7$')
+    '$K_d=0.05$ og $\tau_e=0.1$')
 
 % vurder å bruke denne
 %ylim([-30 30])
